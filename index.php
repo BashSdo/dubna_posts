@@ -11,6 +11,10 @@
     );
     $stmt->execute();
     $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (@$_GET['update'] == "1") {
+        die(json_encode($posts));
+    }
 ?>
 
 <!DOCTYPE html>
@@ -224,7 +228,21 @@
                     }
                 </style>
 
-                <button id="add-post" class="button is-primary">Добавить пост</button>
+                <nav class="level">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <button id="add-post" class="button is-primary">Добавить пост</button>
+                        </div>
+                    </div>
+
+                    <div class="level-right">
+                        <span class="level-item">
+                            <button id="refreshPosts" class="button is-primary">
+                                <span class="fas fa-refresh"></span>
+                            </button>
+                        </span>
+                    </div>
+                </nav>
 
                 <div class="modal modal-add-new">
                     <div class="modal-background"></div>
@@ -254,6 +272,47 @@
 
                             <script lang='javascript'>
                                 jQuery(function($) {
+                                    var refreshPosts = function() {
+                                        $("#posts").html("");
+
+                                        $.ajax({
+                                            type: "GET",
+                                            url: "/?update=1",
+                                            success: function(response) {
+                                                response = JSON.parse(response);
+                                                
+                                                response.forEach(function(post) {
+                                                    $("#posts").append(`
+                                                        <article class="box media">
+                                                            <figure class="media-left">
+                                                                <p class="image is-64x64">
+                                                                    <img src="https://bulma.io/images/placeholders/64x64.png">
+                                                                </p>
+                                                            </figure>
+                                                            <div class="media-content">
+                                                                <div class="content">
+                                                                <p>
+                                                                    <strong>${post.author_name}</strong>
+                                                                    <small>${post.posted_at}</small>
+                                                                    <br>
+                                                                    <u style="font-style: italic">${post.title}</u>
+                                                                    <br>
+                                                                    ${post.content}
+                                                                </p>
+                                                            </div>
+                                                        </article>
+                                                    `);
+                                                });
+                                            }
+                                        });
+                                    }
+
+                                    refreshPosts();
+
+                                    $("#refreshPosts").click(function() {
+                                        refreshPosts();
+                                    });
+
                                     $(".modal-add-new .modal-card-body button").click(function() {
                                         $.ajax({
                                             type: "POST",
@@ -263,7 +322,7 @@
                                                 console.log(response);
                                                 if (response == "ok") {
                                                     alert("Пост успешно добавлен");
-                                                    location = "/";
+                                                    refreshPosts()
                                                 } else {
                                                     alert(response);
                                                 }
@@ -284,26 +343,7 @@
                     </div>
                 </div>
 
-                <?php foreach( $posts as $key => $post ): ?>
-                    <article class="box media">
-                        <figure class="media-left">
-                            <p class="image is-64x64">
-                                <img src="https://bulma.io/images/placeholders/64x64.png">
-                            </p>
-                        </figure>
-                        <div class="media-content">
-                            <div class="content">
-                            <p>
-                                <strong><?= $post['author_name'] ?></strong>
-                                <small><?= $post['posted_at'] ?></small>
-                                <br>
-                                <u style="font-style: italic"><?= $post['title'] ?></u>
-                                <br>
-                                <?= $post['content'] ?>
-                            </p>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
+                <section id="posts"></section>
 
                 <style>
                     .box {
